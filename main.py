@@ -43,8 +43,11 @@ async def home()-> JSONResponse:
     Returns:
         JSONResponse: returns the status message
     """
-    return JSONResponse(content={"message":"Connected successfully"})
-
+    try:
+        return JSONResponse(content={"status":"Success","message":"You are Connected successfully!"})
+    except Exception as e:
+        return JSONResponse(content={"status":"Failed","message":"Error Occured while creating the connection!"}, status_code=409)
+        
 
 @app.post("/upload_file")
 async def upload_file(file: Annotated[UploadFile, File(description="A file read as UploadFile")])->JSONResponse:
