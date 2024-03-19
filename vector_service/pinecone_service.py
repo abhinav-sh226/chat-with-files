@@ -1,7 +1,7 @@
 """This module belong to all the service related to pinecone vector db"""
 from pinecone import Pinecone, PodSpec
 from langchain_pinecone import PineconeVectorStore
-from ai_service import helper_functions
+from ai_service import gen_ai_functions
 import logging
 import traceback
 logging.basicConfig(level=logging.INFO, format = '%(asctime)s - %(levelname)s -%(message)s')
@@ -21,9 +21,10 @@ def connect_pinecone(config)->None:
        traceback_message = traceback.format_exc()
        logging.error("Error: %s\nTraceback: %s", error_message, traceback_message)
 
+
 def ingest_document(config, content_list):
     try:
-        embeddings = helper_functions.get_embeddings(config)
+        embeddings = gen_ai_functions.get_embeddings(config)
         pc = connect_pinecone(config)
         index_name = config["index_name"]
         if index_name in pc.list_indexes().names():

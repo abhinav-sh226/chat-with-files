@@ -11,8 +11,8 @@ import logging
 import pandas as pd
 logging.basicConfig(level=logging.INFO, format = '%(asctime)s - %(levelname)s -%(message)s')
 
-MAX_CHUNK_SIZE = 100
-CHUNK_OVERLAP = 10
+MAX_CHUNK_SIZE = 1000
+CHUNK_OVERLAP = 100
 
 async def read_pdf_file(file: UploadFile) -> list[Document]:
     """The function will read a file, chunk it and then will convert it to 'Document' Type Object and will return a list of 'Document' objectss.
@@ -48,6 +48,7 @@ async def read_pdf_file(file: UploadFile) -> list[Document]:
        logging.error("Error: %s\nTraceback: %s", error_message, traceback_message)
        return []
 
+
 async def read_text_file(file: UploadFile) -> list[Document]:
     """The function will read a file, chunk it and then will convert it to 'Document' Type Object and will return a list of 'Document' objectss.
 
@@ -80,6 +81,7 @@ async def read_text_file(file: UploadFile) -> list[Document]:
        logging.error("Error: %s\nTraceback: %s", error_message, traceback_message)
        return []
 
+
 async def read_csv_file(file: UploadFile) -> list[Document]:
     """The function will read a file, chunk it and then will convert it to 'Document' Type Object and will return a list of 'Document' objectss.
 
@@ -111,6 +113,7 @@ async def read_csv_file(file: UploadFile) -> list[Document]:
        traceback_message = traceback.format_exc()
        logging.error("Error: %s\nTraceback: %s", error_message, traceback_message)
        return []
+
     
 async def read_docx_file(file: UploadFile) -> list[Document]:
     """The function will read a file, chunk it and then will convert it to 'Document' Type Object and will return a list of 'Document' objectss.
