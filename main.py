@@ -1,6 +1,6 @@
 """main module that has API defination along with the schemas"""
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated
 from fastapi.responses import JSONResponse
@@ -11,15 +11,15 @@ from vector_service import pinecone_service
 from ai_service import gen_ai_functions
 from ai_service import prompt
 import config as ConfigTool
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+
 logging.basicConfig(level=logging.INFO, format = '%(asctime)s - %(levelname)s -%(message)s')
 
 load_dotenv()
 
-origins = [
-    "http://localhost",
-    "http://localhost:8080",
-    "http://localhost:3000"
-]
+origins = ['*']
 
 app = FastAPI()
 app.add_middleware(
@@ -33,16 +33,22 @@ app.add_middleware(
 config = ConfigTool.get_config()
 QUERY_PROMPT = prompt.QUERY_PROMPT
 
-@app.get("/")
-async def home()-> JSONResponse:
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request)-> JSONResponse:
     """This function is route of landing page
 
     Returns:
         JSONResponse: returns the status message for the initial connection
     """
     try:
-        return JSONResponse(content={"status":"Success","message":"You are Connected successfully!"})
+        return templates.TemplateResponse(request=request, name="index.html")
     except Exception as e:
+        error_message = type(e).__name__
+        traceback_message = traceback.format_exc()
+        logging.error("Error: %s\nTraceback: %s", error_message, traceback_message)
         return JSONResponse(content={"status":"Failed","message":"Error Occured while creating the connection!"}, status_code=409)
         
 
@@ -94,16 +100,16 @@ async def upload_file(file: Annotated[UploadFile, File(description="A file read 
 
 
 @app.post("/predict")
-async def predict(file: Annotated[UploadFile, File(description="A file read as UploadFile")], query: Annotated[str, File(description="Question for the selected document")]) -> JSONResponse:
+async def predict(file: Annotated[UploadFile, File(description="A file read as UploadFile")], question: Annotated[str, File(description="Question for the selected document")]) -> JSONResponse:
     """this api will take input from user and return the response from a source document
     Args:
         file: an input file
-        query: a query to the input file
+        question: a question to the input file
     Returns:
         Any: _description_
     """
     try:
-        user_input = query
+        user_input = question
         file_name = file.filename
         if file_name.endswith('.txt'):
             final_list =  await read_file.read_text_file(file)
@@ -117,7 +123,7 @@ async def predict(file: Annotated[UploadFile, File(description="A file read as U
             final_list = []
             message =  {
                 "status": "Failed",
-                "message": "Unsupported File Type, you can only choose '.txt', '.pdf', '.docx' or '.csv'"
+                "result": "Unsupported File Type, you can only choose '.txt', '.pdf', '.docx' or '.csv'"
             }
             return JSONResponse(content=message, status_code=409)
         if final_list:
@@ -125,17 +131,17 @@ async def predict(file: Annotated[UploadFile, File(description="A file read as U
             result = chain.invoke({"input_documents": final_list, "question": user_input})
             result = {
                 "status":"Success",
-                "answer":result['output_text']
+                "result":result['output_text']
             }
             return JSONResponse(content=result)
         else:
             message =  {
                 "status": "Failed",
-                "message": "Some unexpected error occured while reading the file. That may be due to unsupported encoding standards."
+                "result": "Some unexpected error occured while reading the file. That may be due to unsupported encoding standards."
             }
             return JSONResponse(content=message, status_code=409)
     except Exception as e:
        error_message = type(e).__name__
        traceback_message = traceback.format_exc()
        logging.error("Error: %s\nTraceback: %s", error_message, traceback_message)
-       return JSONResponse(content={"status": "Failed", "message":"Some unexpected error occured,"}, status_code=409) 
+       return JSONResponse(content={"status": "Failed", "result":"Some unexpected error occured!"}, status_code=409) 
